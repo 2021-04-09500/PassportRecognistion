@@ -23,7 +23,7 @@ public class OcrService {
     public String performOcr(MultipartFile file, String lang) throws Exception {
         ITesseract tesseract = new Tesseract();
 
-        // System-installed Tesseract location (Docker path)
+        // Use system-installed Tesseract (Docker path)
         tesseract.setDatapath("/usr/share/tesseract-ocr/4.00");
 
         // Set language(s)
@@ -45,19 +45,16 @@ public class OcrService {
      */
     public PassportData parseMrz(String ocrText) {
         PassportData data = new PassportData();
-
         if (ocrText == null) return data;
 
-        // Remove spaces and newlines
         String normalized = ocrText.replaceAll("\\s+", "");
 
-        // MRZ pattern for 2-line passports (44 chars per line)
         Pattern pattern = Pattern.compile(
-                "P<([A-Z<]+)<<([A-Z<]+)" +       // Last name and first name
-                        ".+?(\\w{9})" +                  // Passport number
-                        "([A-Z]{3})" +                   // Nationality
-                        ".+?(\\d{6})" +                  // Date of birth YYMMDD
-                        "([MF<])"                        // Gender
+                "P<([A-Z<]+)<<([A-Z<]+)" + // Last + First
+                        ".+?(\\w{9})" +       // Passport number
+                        "([A-Z]{3})" +        // Nationality
+                        ".+?(\\d{6})" +       // DOB YYMMDD
+                        "([MF<])"             // Gender
         );
 
         Matcher matcher = pattern.matcher(normalized);
@@ -72,16 +69,11 @@ public class OcrService {
             data.setDateOfBirth(formatDate(dob));
 
             data.setGender(matcher.group(6).equals("M") ? "Male" : "Female");
-
-            // Expiry date (optional) can be added similarly
         }
 
         return data;
     }
 
-    /**
-     * Format YYMMDD to YYYY-MM-DD (naive 2000+ assumption)
-     */
     private String formatDate(String yymmdd) {
         if (yymmdd == null || yymmdd.length() != 6) return "";
         String year = "20" + yymmdd.substring(0, 2);

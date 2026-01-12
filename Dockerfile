@@ -1,5 +1,5 @@
 # Stage 1: build
-FROM maven:3.9.9-eclipse-temurin-17 AS build
+FROM maven:3.9.4-eclipse-temurin-17 AS build
 WORKDIR /build
 COPY . .
 RUN mvn clean package -DskipTests
@@ -8,14 +8,14 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# Install Tesseract + all language packs
+# Install Tesseract + all languages
 RUN apt-get update && \
     apt-get install -y tesseract-ocr tesseract-ocr-all libtesseract-dev libleptonica-dev pkg-config && \
     rm -rf /var/lib/apt/lists/*
 
-# Tess4J expects parent of tessdata
-ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00
+# Tess4J expects the parent folder of tessdata
+ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata
 
 COPY --from=build /build/target/*.jar app.jar
 EXPOSE 8080
-CMD ["java","-jar","app.jar"]
+CMD ["java", "-jar", "app.jar"]
