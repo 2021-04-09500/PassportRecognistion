@@ -85,59 +85,60 @@
 </div>
 
 <script>
-    /* -------------------------------------------------
-       Prefill fields from sessionStorage (mock OCR OK)
-    -------------------------------------------------- */
-    const ocrData = JSON.parse(sessionStorage.getItem("ocrData") || "{}");
+    document.addEventListener("DOMContentLoaded", () => {
+        // --- 1. Get OCR or dummy fallback data ---
+        let ocrData = JSON.parse(sessionStorage.getItem("ocrData") || "{}");
 
-    document.getElementById("firstName").value = ocrData.firstName || "";
-    document.getElementById("lastName").value = ocrData.lastName || "";
-    document.getElementById("passportNumber").value = ocrData.passportNumber || "";
-    document.getElementById("nationality").value = ocrData.nationality || "";
-    document.getElementById("dateOfBirth").value = ocrData.dateOfBirth || "";
-    document.getElementById("gender").value = ocrData.gender || "";
-    document.getElementById("expiryDate").value = ocrData.expiryDate || "";
+        // If empty, inject dummy data for PoC
+        if (!ocrData.firstName) {
+            ocrData = {
+                firstName: "JOHN",
+                lastName: "DOE",
+                passportNumber: "A1234567",
+                nationality: "USA",
+                dateOfBirth: "1990-01-01",
+                gender: "Male",
+                expiryDate: "2030-01-01"
+            };
+            sessionStorage.setItem("ocrData", JSON.stringify(ocrData));
+        }
 
-    // Email & phone captured earlier
-    document.getElementById("email").value =
-        sessionStorage.getItem("email") || "";
+        // --- 2. Prefill form fields ---
+        document.getElementById('firstName').value = ocrData.firstName;
+        document.getElementById('lastName').value = ocrData.lastName;
+        document.getElementById('passportNumber').value = ocrData.passportNumber;
+        document.getElementById('nationality').value = ocrData.nationality;
+        document.getElementById('dateOfBirth').value = ocrData.dateOfBirth;
+        document.getElementById('gender').value = ocrData.gender;
+        document.getElementById('expiryDate').value = ocrData.expiryDate;
 
-    document.getElementById("phone").value =
-        sessionStorage.getItem("phone") || "";
+        // Email & Phone
+        document.getElementById('email').value = sessionStorage.getItem("email") || "";
+        document.getElementById('phone').value = sessionStorage.getItem("phone") || "";
 
-    /* -------------------------------------------------
-       Continue button → SECURE HANDOFF (Option 3)
-    -------------------------------------------------- */
-    document.getElementById("continueBtn").addEventListener("click", () => {
+        // --- 3. Continue button ---
+        document.getElementById('continueBtn').addEventListener('click', () => {
+            const confirmedData = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                passportNumber: document.getElementById('passportNumber').value,
+                nationality: document.getElementById('nationality').value,
+                dateOfBirth: document.getElementById('dateOfBirth').value,
+                gender: document.getElementById('gender').value,
+                expiryDate: document.getElementById('expiryDate').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value
+            };
 
-        const confirmedData = {
-            firstName: document.getElementById("firstName").value,
-            lastName: document.getElementById("lastName").value,
-            passportNumber: document.getElementById("passportNumber").value,
-            nationality: document.getElementById("nationality").value,
-            dateOfBirth: document.getElementById("dateOfBirth").value,
-            gender: document.getElementById("gender").value,
-            expiryDate: document.getElementById("expiryDate").value,
-            email: document.getElementById("email").value,
-            phone: document.getElementById("phone").value
-        };
+            console.log("User confirmed data:", confirmedData);
+            sessionStorage.setItem("confirmedData", JSON.stringify(confirmedData));
 
-        console.log("Confirmed data:", confirmedData);
-
-        // Store for audit / flow continuity
-        sessionStorage.setItem(
-            "confirmedData",
-            JSON.stringify(confirmedData)
-        );
-
-        // ✅ Secure third-party handoff (NEW TAB)
-        window.open(
-            "https://inbound.nicinsurance.co.tz/",
-            "_blank",
-            "noopener,noreferrer"
-        );
+            // --- Open NIC in a new tab (avoids browser security block) ---
+            window.open("https://inbound.nicinsurance.co.tz/", "_blank");
+        });
     });
 </script>
+
 
 </body>
 </html>
