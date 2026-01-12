@@ -11,15 +11,13 @@ import java.io.File;
 public class OcrService {
 
     public String extractText(MultipartFile file) throws Exception {
+
         ITesseract tesseract = new Tesseract();
 
-        // Point to tessdata inside your resources/static folder
-        // Note: Tesseract expects the parent folder of tessdata
-        String tessDataPath = new File("src/main/resources/static/tesseract").getAbsolutePath();
-        tesseract.setDatapath(tessDataPath);
-        tesseract.setLanguage("eng"); // use eng.traineddata
+        // point to the folder that CONTAINS tessdata
+        tesseract.setDatapath("tessdata");
+        tesseract.setLanguage("eng");
 
-        // Save the uploaded file temporarily
         File tempFile = File.createTempFile("ocr-", ".png");
         file.transferTo(tempFile);
 
