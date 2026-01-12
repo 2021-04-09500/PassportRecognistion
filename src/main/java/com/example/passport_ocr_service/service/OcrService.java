@@ -23,8 +23,8 @@ public class OcrService {
     public String performOcr(MultipartFile file, String lang) throws Exception {
         ITesseract tesseract = new Tesseract();
 
-        // Use system-installed Tesseract (Docker path)
-        tesseract.setDatapath("/usr/share/tesseract-ocr/4.00");
+        // Use system-installed Tesseract
+        tesseract.setDatapath("/usr/share/tesseract-ocr");
 
         // Set language(s)
         tesseract.setLanguage(lang);
@@ -49,25 +49,22 @@ public class OcrService {
 
         String normalized = ocrText.replaceAll("\\s+", "");
 
+        // MRZ pattern for 2-line passports (44 chars per line)
         Pattern pattern = Pattern.compile(
-                "P<([A-Z<]+)<<([A-Z<]+)" + // Last + First
-                        ".+?(\\w{9})" +       // Passport number
-                        "([A-Z]{3})" +        // Nationality
-                        ".+?(\\d{6})" +       // DOB YYMMDD
-                        "([MF<])"             // Gender
+                "P<([A-Z<]+)<<([A-Z<]+)" + // Last name + first name
+                        ".+?(\\w{9})" +     // Passport number
+                        "([A-Z]{3})" +      // Nationality
+                        ".+?(\\d{6})" +     // Date of birth YYMMDD
+                        "([MF<])"           // Gender
         );
 
         Matcher matcher = pattern.matcher(normalized);
-
         if (matcher.find()) {
             data.setLastName(matcher.group(1).replace("<", " ").trim());
             data.setFirstName(matcher.group(2).replace("<", " ").trim());
             data.setPassportNumber(matcher.group(3).trim());
             data.setNationality(matcher.group(4).trim());
-
-            String dob = matcher.group(5);
-            data.setDateOfBirth(formatDate(dob));
-
+            data.setDateOfBirth(formatDate(matcher.group(5)));
             data.setGender(matcher.group(6).equals("M") ? "Male" : "Female");
         }
 
