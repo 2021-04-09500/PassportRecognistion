@@ -16,7 +16,7 @@ public class OcrService {
 
         // IMPORTANT: this must point to the folder that CONTAINS tessdata
         // NOT tessdata itself
-        tesseract.setDatapath("/usr/share/tesseract-ocr");
+        tesseract.setDatapath("/usr/share/tesseract-ocr/tessdata");
 
         tesseract.setLanguage(lang);
 
