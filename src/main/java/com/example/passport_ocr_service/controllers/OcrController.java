@@ -25,7 +25,7 @@ public class OcrController {
         try {
             // Perform OCR
             String ocrText = ocrService.performOcr(image, lang);
-
+            System.out.println("Raw OCR text sent to frontend: " + ocrText);
             // Parse MRZ
             PassportData passportData = ocrService.parseMrz(ocrText);
 

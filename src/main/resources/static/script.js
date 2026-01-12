@@ -100,6 +100,9 @@ const PassportOCRApp = {
                 }
 
                 const ocrResult = await response.json();
+                // Debug: see what came back from backend
+                console.log("Backend OCR response:", ocrResult);
+                console.log("Raw OCR text:", ocrResult.rawText);
 
                 // Save OCR result + image + phone/email
                 sessionStorage.setItem("ocrData", JSON.stringify(ocrResult));
