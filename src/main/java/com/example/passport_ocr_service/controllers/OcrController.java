@@ -3,6 +3,7 @@ package com.example.passport_ocr_service.controllers;
 import com.example.passport_ocr_service.model.PassportData;
 import com.example.passport_ocr_service.service.OcrService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,34 +19,27 @@ public class OcrController {
     private OcrService ocrService;
 
     @PostMapping("/passport")
-    public ResponseEntity<?> processPassport(
-            @RequestParam("image") MultipartFile image,
-            @RequestParam(value = "lang", defaultValue = "eng") String lang
-    ) {
+    public ResponseEntity<?> handlePassport(@RequestParam("image") MultipartFile file) {
         try {
-            // Perform OCR
-            String ocrText = ocrService.performOcr(image, lang);
-            System.out.println("Raw OCR text sent to frontend: " + ocrText);
-            // Parse MRZ
-            PassportData passportData = ocrService.parseMrz(ocrText);
+            String rawText = ocrService.performOcr(file, "eng");
+            PassportData mrzData = ocrService.parseMrz(rawText);
 
-            // Build response
             Map<String, Object> response = new HashMap<>();
-            response.put("rawText", ocrText);
-            response.put("firstName", passportData.getFirstName());
-            response.put("lastName", passportData.getLastName());
-            response.put("passportNumber", passportData.getPassportNumber());
-            response.put("nationality", passportData.getNationality());
-            response.put("dateOfBirth", passportData.getDateOfBirth());
-            response.put("gender", passportData.getGender());
-            response.put("expiryDate", passportData.getExpiryDate());
+            response.put("rawText", rawText);
+            response.put("firstName", mrzData.getFirstName());
+            response.put("lastName", mrzData.getLastName());
+            response.put("passportNumber", mrzData.getPassportNumber());
+            response.put("nationality", mrzData.getNationality());
+            response.put("dateOfBirth", mrzData.getDateOfBirth());
+            response.put("gender", mrzData.getGender());
+            response.put("expiryDate", mrzData.getExpiryDate());
 
             return ResponseEntity.ok(response);
-
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "OCR processing failed"));
         }
     }
+
 }

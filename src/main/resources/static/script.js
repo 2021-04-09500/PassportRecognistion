@@ -43,7 +43,6 @@ const PassportOCRApp = {
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
 
-            // Get crop bounds from scan-frame overlay (scales to video's natural resolution)
             const frame = document.getElementById('scanFrame');
             let cropX = 0, cropY = 0, cropW = video.videoWidth, cropH = video.videoHeight;
 
@@ -59,14 +58,12 @@ const PassportOCRApp = {
                 cropH = frameRect.height * scaleY;
             }
 
-            // Set canvas to crop size and draw the cropped area
             canvas.width = cropW;
             canvas.height = cropH;
             ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-            PassportOCRApp.state.capturedData = canvas.toDataURL("image/jpeg", 0.9);  // Higher quality JPEG
+            PassportOCRApp.state.capturedData = canvas.toDataURL("image/jpeg", 0.9);
 
-            // Show preview (unchanged)
             let img = document.getElementById("captured-img");
             const container = PassportOCRApp.elements.container;
             if (!img && container) {
@@ -100,7 +97,6 @@ const PassportOCRApp = {
                 return;
             }
 
-            // Grab phone and email from index.html inputs
             PassportOCRApp.state.phone = PassportOCRApp.elements.phoneInput?.value || "";
             PassportOCRApp.state.email = PassportOCRApp.elements.emailInput?.value || "";
 
@@ -121,21 +117,26 @@ const PassportOCRApp = {
                 }
 
                 const ocrResult = await response.json();
-                // Debug: see what came back from backend
                 console.log("Backend OCR response:", ocrResult);
-                console.log("Raw OCR text:", ocrResult.rawText);
 
-                // Save OCR result + image + phone/email
+                // Check if MRZ data exists
+                const hasMrz = ocrResult.passportNumber || ocrResult.firstName || ocrResult.lastName;
+                if (!hasMrz) {
+                    alert("OCR did not detect valid passport data. Please retake the photo.");
+                    return;
+                }
+
+                // Save all data to sessionStorage
                 sessionStorage.setItem("ocrData", JSON.stringify(ocrResult));
                 sessionStorage.setItem("passportImage", PassportOCRApp.state.capturedData);
                 sessionStorage.setItem("phone", PassportOCRApp.state.phone);
                 sessionStorage.setItem("email", PassportOCRApp.state.email);
 
-                // Redirect to verification page
+                // Navigate
                 window.location.href = "verify.html";
             } catch (err) {
                 console.error(err);
-                alert("Failed to connect to backend OCR service.");
+                alert("Failed to connect to backend OCR service. Please try again.");
             }
         },
 
@@ -144,6 +145,10 @@ const PassportOCRApp = {
             PassportOCRApp.state.capturedData = "";
             if (PassportOCRApp.elements.nextBtn) PassportOCRApp.elements.nextBtn.disabled = true;
             PassportOCRApp.methods.startCamera();
+
+            // Remove preview image
+            const img = document.getElementById("captured-img");
+            if (img) img.remove();
         },
 
         prefillVerifyPage: function () {
@@ -160,12 +165,12 @@ const PassportOCRApp = {
                 "gender",
                 "expiryDate"
             ];
-            fields.forEach((id) => {
+
+            fields.forEach(id => {
                 const el = document.getElementById(id);
-                if (el && ocrData[id]) el.value = ocrData[id];
+                if (el && ocrData[id] && ocrData[id] !== "") el.value = ocrData[id];
             });
 
-            // Prefill phone and email
             const phoneEl = document.getElementById("phone");
             const emailEl = document.getElementById("email");
             if (phoneEl) phoneEl.value = sessionStorage.getItem("phone") || "";
@@ -198,5 +203,5 @@ const PassportOCRApp = {
     }
 };
 
-// Run the app
+// Initialize
 PassportOCRApp.init();
