@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,17 +14,22 @@ import java.util.regex.Pattern;
 public class OcrService {
 
     /**
-     * Perform OCR on an uploaded file using Tesseract.
-     * Supports all installed languages.
+     * Perform OCR on uploaded image using specified language(s).
+     * @param file Multipart image file
+     * @param lang Language code(s), e.g., "eng" or "eng+fra+deu"
+     * @return OCR text
+     * @throws Exception
      */
-    public String performOcr(MultipartFile file, String language) throws Exception {
+    public String performOcr(MultipartFile file, String lang) throws Exception {
         ITesseract tesseract = new Tesseract();
 
-        // Use system tessdata installed via apt
-        tesseract.setDatapath(System.getenv("TESSDATA_PREFIX")); // /usr/share/tesseract-ocr/4.00/tessdata/
-        tesseract.setLanguage(language); // e.g., "eng", "fra", "deu" or multiple: "eng+fra+deu"
+        // System-installed Tesseract location (Docker path)
+        tesseract.setDatapath("/usr/share/tesseract-ocr/4.00");
 
-        // Save MultipartFile to temp
+        // Set language(s)
+        tesseract.setLanguage(lang);
+
+        // Save uploaded file to temp location
         File tempFile = File.createTempFile("ocr-", ".jpg");
         file.transferTo(tempFile);
 
@@ -37,31 +41,52 @@ public class OcrService {
     }
 
     /**
-     * Parse MRZ (Machine Readable Zone) from passport OCR text
+     * Parse MRZ from passport OCR text.
      */
     public PassportData parseMrz(String ocrText) {
         PassportData data = new PassportData();
 
+        if (ocrText == null) return data;
+
+        // Remove spaces and newlines
+        String normalized = ocrText.replaceAll("\\s+", "");
+
+        // MRZ pattern for 2-line passports (44 chars per line)
         Pattern pattern = Pattern.compile(
-                "P<([A-Z<]+)<<([A-Z<]+)[\\s\\S]+?(\\d{9})[A-Z0-9]<([A-Z]{3})[\\s\\S]+?(\\d{6})[MF<](\\d{6})"
+                "P<([A-Z<]+)<<([A-Z<]+)" +       // Last name and first name
+                        ".+?(\\w{9})" +                  // Passport number
+                        "([A-Z]{3})" +                   // Nationality
+                        ".+?(\\d{6})" +                  // Date of birth YYMMDD
+                        "([MF<])"                        // Gender
         );
-        Matcher matcher = pattern.matcher(ocrText.replaceAll("\\s+", ""));
+
+        Matcher matcher = pattern.matcher(normalized);
+
         if (matcher.find()) {
             data.setLastName(matcher.group(1).replace("<", " ").trim());
             data.setFirstName(matcher.group(2).replace("<", " ").trim());
             data.setPassportNumber(matcher.group(3).trim());
             data.setNationality(matcher.group(4).trim());
-            data.setDateOfBirth(formatDate(matcher.group(5)));
-            data.setGender(matcher.group(6).startsWith("M") ? "Male" : "Female");
+
+            String dob = matcher.group(5);
+            data.setDateOfBirth(formatDate(dob));
+
+            data.setGender(matcher.group(6).equals("M") ? "Male" : "Female");
+
+            // Expiry date (optional) can be added similarly
         }
+
         return data;
     }
 
+    /**
+     * Format YYMMDD to YYYY-MM-DD (naive 2000+ assumption)
+     */
     private String formatDate(String yymmdd) {
-        if (yymmdd.length() != 6) return "";
-        String year = yymmdd.substring(0, 2);
+        if (yymmdd == null || yymmdd.length() != 6) return "";
+        String year = "20" + yymmdd.substring(0, 2);
         String month = yymmdd.substring(2, 4);
         String day = yymmdd.substring(4, 6);
-        return "20" + year + "-" + month + "-" + day;
+        return year + "-" + month + "-" + day;
     }
 }

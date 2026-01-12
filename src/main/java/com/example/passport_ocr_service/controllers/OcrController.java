@@ -17,14 +17,11 @@ public class OcrController {
     @Autowired
     private OcrService ocrService;
 
-    /**
-     * Process passport image and extract MRZ data.
-     * Optional 'lang' parameter allows specifying Tesseract languages, e.g., "eng" or "eng+fra+deu".
-     */
     @PostMapping("/passport")
     public ResponseEntity<?> processPassport(
             @RequestParam("image") MultipartFile image,
-            @RequestParam(value = "lang", defaultValue = "eng") String lang) {
+            @RequestParam(value = "lang", defaultValue = "eng") String lang
+    ) {
         try {
             // Perform OCR
             String ocrText = ocrService.performOcr(image, lang);

@@ -13,8 +13,8 @@ RUN apt-get update && \
     apt-get install -y tesseract-ocr tesseract-ocr-all libtesseract-dev libleptonica-dev pkg-config && \
     rm -rf /var/lib/apt/lists/*
 
-# Set TESSDATA_PREFIX so Tess4J knows where to find traineddata
-ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata/
+# Tess4J expects parent of tessdata
+ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00
 
 COPY --from=build /build/target/*.jar app.jar
 EXPOSE 8080
