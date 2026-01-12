@@ -15,80 +15,127 @@
     <p class="subtitle">Thibitisha taarifa zako ili kuendelea</p>
 
     <div class="card">
-        <div class="card-header"><h2>Taarifa Zilizopatikana</h2></div>
+        <div class="card-header">
+            <h2>Taarifa Zilizopatikana</h2>
+        </div>
 
         <!-- Passport Fields -->
-        <div class="field"><label>First Name</label><input type="text" id="firstName"></div>
-        <div class="field"><label>Last Name</label><input type="text" id="lastName"></div>
-        <div class="field"><label>Passport Number</label><input type="text" id="passportNumber"></div>
-        <div class="field"><label>Nationality</label><input type="text" id="nationality"></div>
-        <div class="field"><label>Date of Birth</label><input type="date" id="dateOfBirth"></div>
-        <div class="field"><label>Gender</label>
+        <div class="field">
+            <label>First Name</label>
+            <input type="text" id="firstName">
+        </div>
+
+        <div class="field">
+            <label>Last Name</label>
+            <input type="text" id="lastName">
+        </div>
+
+        <div class="field">
+            <label>Passport Number</label>
+            <input type="text" id="passportNumber">
+        </div>
+
+        <div class="field">
+            <label>Nationality</label>
+            <input type="text" id="nationality">
+        </div>
+
+        <div class="field">
+            <label>Date of Birth</label>
+            <input type="date" id="dateOfBirth">
+        </div>
+
+        <div class="field">
+            <label>Gender</label>
             <select id="gender">
                 <option value="">Chagua</option>
                 <option value="Male">Mwanaume</option>
                 <option value="Female">Mwanamke</option>
             </select>
         </div>
-        <div class="field"><label>Expiry Date</label><input type="date" id="expiryDate"></div>
 
-        <!-- Additional fields from index.html -->
-        <div class="field"><label>Email</label><input type="email" id="email"></div>
-        <div class="field"><label>Phone</label><input type="tel" id="phone"></div>
+        <div class="field">
+            <label>Expiry Date</label>
+            <input type="date" id="expiryDate">
+        </div>
+
+        <!-- Extra fields -->
+        <div class="field">
+            <label>Email</label>
+            <input type="email" id="email">
+        </div>
+
+        <div class="field">
+            <label>Phone</label>
+            <input type="tel" id="phone">
+        </div>
     </div>
 
     <div class="actions">
-        <button class="btn btn-retake" onclick="location.href='camera.html'">Piga picha tena</button>
-        <button class="btn btn-continue" id="continueBtn">Endelea</button>
+        <button class="btn btn-retake" onclick="location.href='camera.html'">
+            Piga picha tena
+        </button>
+
+        <button class="btn btn-continue" id="continueBtn">
+            Endelea
+        </button>
     </div>
 
     <p class="security">🔒 Taarifa zako zinalindwa kwa usalama wa hali ya juu</p>
 </div>
 
 <script>
-    // -----------------------------
-    // Prefill fields from sessionStorage
-    // -----------------------------
+    /* -------------------------------------------------
+       Prefill fields from sessionStorage (mock OCR OK)
+    -------------------------------------------------- */
     const ocrData = JSON.parse(sessionStorage.getItem("ocrData") || "{}");
-    const phone = sessionStorage.getItem("phone") || "";
-    const email = sessionStorage.getItem("email") || "";
 
-    // Passport fields
-    document.getElementById('firstName').value = ocrData.firstName || "";
-    document.getElementById('lastName').value = ocrData.lastName || "";
-    document.getElementById('passportNumber').value = ocrData.passportNumber || "";
-    document.getElementById('nationality').value = ocrData.nationality || "";
-    document.getElementById('dateOfBirth').value = ocrData.dateOfBirth || "";
-    document.getElementById('gender').value = ocrData.gender || "";
-    document.getElementById('expiryDate').value = ocrData.expiryDate || "";
+    document.getElementById("firstName").value = ocrData.firstName || "";
+    document.getElementById("lastName").value = ocrData.lastName || "";
+    document.getElementById("passportNumber").value = ocrData.passportNumber || "";
+    document.getElementById("nationality").value = ocrData.nationality || "";
+    document.getElementById("dateOfBirth").value = ocrData.dateOfBirth || "";
+    document.getElementById("gender").value = ocrData.gender || "";
+    document.getElementById("expiryDate").value = ocrData.expiryDate || "";
 
-    // Email & Phone from index.html
-    document.getElementById('email').value = email;
-    document.getElementById('phone').value = phone;
+    // Email & phone captured earlier
+    document.getElementById("email").value =
+        sessionStorage.getItem("email") || "";
 
-    // -----------------------------
-    // Continue button
-    // -----------------------------
-    document.getElementById('continueBtn').addEventListener('click', () => {
+    document.getElementById("phone").value =
+        sessionStorage.getItem("phone") || "";
+
+    /* -------------------------------------------------
+       Continue button → SECURE HANDOFF (Option 3)
+    -------------------------------------------------- */
+    document.getElementById("continueBtn").addEventListener("click", () => {
+
         const confirmedData = {
-            firstName: document.getElementById('firstName').value,
-            lastName: document.getElementById('lastName').value,
-            passportNumber: document.getElementById('passportNumber').value,
-            nationality: document.getElementById('nationality').value,
-            dateOfBirth: document.getElementById('dateOfBirth').value,
-            gender: document.getElementById('gender').value,
-            expiryDate: document.getElementById('expiryDate').value,
-            email: document.getElementById('email').value,
-            phone: document.getElementById('phone').value
+            firstName: document.getElementById("firstName").value,
+            lastName: document.getElementById("lastName").value,
+            passportNumber: document.getElementById("passportNumber").value,
+            nationality: document.getElementById("nationality").value,
+            dateOfBirth: document.getElementById("dateOfBirth").value,
+            gender: document.getElementById("gender").value,
+            expiryDate: document.getElementById("expiryDate").value,
+            email: document.getElementById("email").value,
+            phone: document.getElementById("phone").value
         };
 
-        console.log("User confirmed data:", confirmedData);
+        console.log("Confirmed data:", confirmedData);
 
-        // Optionally store confirmed data in sessionStorage for next pages
-        sessionStorage.setItem("confirmedData", JSON.stringify(confirmedData));
+        // Store for audit / flow continuity
+        sessionStorage.setItem(
+            "confirmedData",
+            JSON.stringify(confirmedData)
+        );
 
-        // Redirect to third-party or next workflow
-        window.location.href = "https://inbound.nicinsurance.co.tz/";
+        // ✅ Secure third-party handoff (NEW TAB)
+        window.open(
+            "https://inbound.nicinsurance.co.tz/",
+            "_blank",
+            "noopener,noreferrer"
+        );
     });
 </script>
 
