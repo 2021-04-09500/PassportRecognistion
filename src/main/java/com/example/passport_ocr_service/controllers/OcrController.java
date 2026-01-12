@@ -17,12 +17,22 @@ public class OcrController {
     @Autowired
     private OcrService ocrService;
 
+    /**
+     * Process passport image and extract MRZ data.
+     * Optional 'lang' parameter allows specifying Tesseract languages, e.g., "eng" or "eng+fra+deu".
+     */
     @PostMapping("/passport")
-    public ResponseEntity<?> processPassport(@RequestParam("image") MultipartFile image) {
+    public ResponseEntity<?> processPassport(
+            @RequestParam("image") MultipartFile image,
+            @RequestParam(value = "lang", defaultValue = "eng") String lang) {
         try {
-            String ocrText = ocrService.performOcr(image);
+            // Perform OCR
+            String ocrText = ocrService.performOcr(image, lang);
+
+            // Parse MRZ
             PassportData passportData = ocrService.parseMrz(ocrText);
 
+            // Build response
             Map<String, Object> response = new HashMap<>();
             response.put("rawText", ocrText);
             response.put("firstName", passportData.getFirstName());
@@ -34,9 +44,11 @@ public class OcrController {
             response.put("expiryDate", passportData.getExpiryDate());
 
             return ResponseEntity.ok(response);
+
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(500)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 }

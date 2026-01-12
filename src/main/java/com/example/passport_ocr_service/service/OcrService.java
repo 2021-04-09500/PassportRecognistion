@@ -3,47 +3,29 @@ package com.example.passport_ocr_service.service;
 import com.example.passport_ocr_service.model.PassportData;
 import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
 public class OcrService {
 
-    // Copy tessdata to temp folder
-    private File prepareTessData() throws IOException {
-        ClassPathResource tessResource = new ClassPathResource("tessdata/eng.traineddata");
-        File tempDir = new File(System.getProperty("java.io.tmpdir"), "tessdata");
-        if (!tempDir.exists()) tempDir.mkdirs();
-
-        File engFile = new File(tempDir, "eng.traineddata");
-        if (!engFile.exists()) {
-            try (InputStream is = tessResource.getInputStream();
-                 FileOutputStream fos = new FileOutputStream(engFile)) {
-                byte[] buffer = new byte[1024];
-                int read;
-                while ((read = is.read(buffer)) != -1) {
-                    fos.write(buffer, 0, read);
-                }
-            }
-        }
-        return tempDir.getParentFile(); // Tess4J expects parent of tessdata
-    }
-
-    // -----------------------------
-    // OCR method
-    // -----------------------------
-    public String performOcr(MultipartFile file) throws Exception {
-        File tessDir = prepareTessData();
-
+    /**
+     * Perform OCR on an uploaded file using Tesseract.
+     * Supports all installed languages.
+     */
+    public String performOcr(MultipartFile file, String language) throws Exception {
         ITesseract tesseract = new Tesseract();
-        tesseract.setDatapath(tessDir.getAbsolutePath());
-        tesseract.setLanguage("eng");
 
+        // Use system tessdata installed via apt
+        tesseract.setDatapath(System.getenv("TESSDATA_PREFIX")); // /usr/share/tesseract-ocr/4.00/tessdata/
+        tesseract.setLanguage(language); // e.g., "eng", "fra", "deu" or multiple: "eng+fra+deu"
+
+        // Save MultipartFile to temp
         File tempFile = File.createTempFile("ocr-", ".jpg");
         file.transferTo(tempFile);
 
@@ -54,14 +36,15 @@ public class OcrService {
         }
     }
 
-    // -----------------------------
-    // MRZ parser
-    // -----------------------------
+    /**
+     * Parse MRZ (Machine Readable Zone) from passport OCR text
+     */
     public PassportData parseMrz(String ocrText) {
         PassportData data = new PassportData();
 
-        // Simple MRZ pattern for passport (2 lines, 44 chars each)
-        Pattern pattern = Pattern.compile("P<([A-Z<]+)<<([A-Z<]+)[\\s\\S]+?(\\d{9})[A-Z0-9]<([A-Z]{3})[\\s\\S]+?(\\d{6})[MF<](\\d{6})");
+        Pattern pattern = Pattern.compile(
+                "P<([A-Z<]+)<<([A-Z<]+)[\\s\\S]+?(\\d{9})[A-Z0-9]<([A-Z]{3})[\\s\\S]+?(\\d{6})[MF<](\\d{6})"
+        );
         Matcher matcher = pattern.matcher(ocrText.replaceAll("\\s+", ""));
         if (matcher.find()) {
             data.setLastName(matcher.group(1).replace("<", " ").trim());
@@ -70,7 +53,6 @@ public class OcrService {
             data.setNationality(matcher.group(4).trim());
             data.setDateOfBirth(formatDate(matcher.group(5)));
             data.setGender(matcher.group(6).startsWith("M") ? "Male" : "Female");
-            // Expiry date can be extracted similarly if needed
         }
         return data;
     }
@@ -80,6 +62,6 @@ public class OcrService {
         String year = yymmdd.substring(0, 2);
         String month = yymmdd.substring(2, 4);
         String day = yymmdd.substring(4, 6);
-        return "20" + year + "-" + month + "-" + day; // naive 2000+ assumption
+        return "20" + year + "-" + month + "-" + day;
     }
 }
