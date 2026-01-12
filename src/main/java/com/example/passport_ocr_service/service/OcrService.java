@@ -14,16 +14,20 @@ public class OcrService {
 
         ITesseract tesseract = new Tesseract();
 
-        // VERY IMPORTANT for Docker/Linux
-        tesseract.setDatapath("/usr/share/tesseract-ocr/4.00/tessdata");
+        // Set the path to your local Tesseract installation
+        // Point to the 'tessdata' folder inside your Tesseract path
+        tesseract.setDatapath("C:/Users/lenovo/Downloads/tesseract-ocr-tesseract-9c516f4/tessdata");
         tesseract.setLanguage("eng");
 
+        // Create a temporary file to store the uploaded image
         File tempFile = File.createTempFile("ocr-", ".png");
         file.transferTo(tempFile);
 
         try {
+            // Perform OCR
             return tesseract.doOCR(tempFile);
         } finally {
+            // Clean up temp file
             tempFile.delete();
         }
     }

@@ -6,12 +6,10 @@ import com.example.passport_ocr_service.service.OcrService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import java.util.Map;
-
 
 @RestController
 @RequestMapping("/api/ocr")
-@CrossOrigin
+@CrossOrigin(origins = "*") // Allow all origins for testing
 public class OcrController {
 
     @Autowired
@@ -20,11 +18,19 @@ public class OcrController {
     @Autowired
     private MrzParserService mrzParser;
 
+    /**
+     * Accepts a real image file (jpg/png) and returns parsed passport data.
+     * The frontend should send a FormData with key "image".
+     */
     @PostMapping("/passport")
-    public PassportData upload(@RequestParam("image") MultipartFile file)
-            throws Exception {
+    public PassportData upload(@RequestParam("image") MultipartFile file) throws Exception {
 
-        String text = ocrService.extractText(file);
-        return mrzParser.parse(text);
+        // Extract text using Tesseract
+        String ocrText = ocrService.extractText(file);
+
+        // Parse MRZ or passport info
+        PassportData data = mrzParser.parse(ocrText);
+
+        return data;
     }
 }

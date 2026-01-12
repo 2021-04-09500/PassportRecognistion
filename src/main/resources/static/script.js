@@ -28,7 +28,8 @@ const PassportOCRApp = {
   // Configuration
   // ------------------------------
   config: {
-    BACKEND_URL: "/api/ocr/passport" // relative URL since frontend is served by Spring Boot
+    BACKEND_URL: "/api/ocr/passport"
+    // replace <YOUR-PC-LAN-IP> with your PC's IP from `ipconfig` (like 192.168.x.x)
   },
 
   // ------------------------------
@@ -77,6 +78,7 @@ const PassportOCRApp = {
       if (PassportOCRApp.elements.nextBtn) PassportOCRApp.elements.nextBtn.disabled = false;
     },
 
+    // Convert dataURL to Blob for real file upload
     dataURLtoBlob: function (dataURL) {
       const parts = dataURL.split(",");
       const mime = parts[0].match(/:(.*?);/)[1];
@@ -95,12 +97,12 @@ const PassportOCRApp = {
       const imageBlob = PassportOCRApp.methods.dataURLtoBlob(PassportOCRApp.state.capturedData);
       const imageFile = new File([imageBlob], "passport.jpg", { type: "image/jpeg" });
       const formData = new FormData();
-      formData.append("image", imageFile); // must match backend
+      formData.append("image", imageFile); // key must match backend @RequestParam("image")
 
       try {
         const response = await fetch(PassportOCRApp.config.BACKEND_URL, {
           method: "POST",
-          body: formData // no headers, browser handles multipart automatically
+          body: formData // no Content-Type needed, browser sets multipart automatically
         });
 
         if (!response.ok) {
@@ -110,7 +112,7 @@ const PassportOCRApp = {
 
         const ocrResult = await response.json();
 
-        // Save OCR result and image
+        // Save OCR result and image for verification page
         sessionStorage.setItem("ocrData", JSON.stringify(ocrResult));
         sessionStorage.setItem("passportImage", PassportOCRApp.state.capturedData);
 
@@ -166,7 +168,7 @@ const PassportOCRApp = {
 
     if (PassportOCRApp.elements.continueCameraBtn)
       PassportOCRApp.elements.continueCameraBtn.addEventListener("click", () => {
-        alert("Continue button not implemented yet."); // placeholder
+        alert("Continue button not implemented yet.");
       });
   },
 
