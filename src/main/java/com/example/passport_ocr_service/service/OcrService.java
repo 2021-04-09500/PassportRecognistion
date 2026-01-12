@@ -21,7 +21,7 @@ public class OcrService {
         ITesseract tesseract = new Tesseract();
 
         // Datapath must match Docker installation
-        tesseract.setDatapath("/usr/share/tesseract-ocr/4.00");
+        tesseract.setDatapath("/usr/share/tesseract-ocr/4.00/tessdata");
         tesseract.setLanguage(lang);
 
         // Use correct extension for temp file
