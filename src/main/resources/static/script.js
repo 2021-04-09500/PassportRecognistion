@@ -39,13 +39,34 @@ const PassportOCRApp = {
         capturePhoto: function () {
             const video = PassportOCRApp.elements.video;
             if (!video) return;
-            const canvas = document.createElement("canvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext("2d").drawImage(video, 0, 0);
-            PassportOCRApp.state.capturedData = canvas.toDataURL("image/jpeg");
 
-            // Show preview
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            // Get crop bounds from scan-frame overlay (scales to video's natural resolution)
+            const frame = document.getElementById('scanFrame');
+            let cropX = 0, cropY = 0, cropW = video.videoWidth, cropH = video.videoHeight;
+
+            if (frame) {
+                const videoRect = video.getBoundingClientRect();
+                const frameRect = frame.getBoundingClientRect();
+                const scaleX = video.videoWidth / videoRect.width;
+                const scaleY = video.videoHeight / videoRect.height;
+
+                cropX = (frameRect.left - videoRect.left) * scaleX;
+                cropY = (frameRect.top - videoRect.top) * scaleY;
+                cropW = frameRect.width * scaleX;
+                cropH = frameRect.height * scaleY;
+            }
+
+            // Set canvas to crop size and draw the cropped area
+            canvas.width = cropW;
+            canvas.height = cropH;
+            ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+            PassportOCRApp.state.capturedData = canvas.toDataURL("image/jpeg", 0.9);  // Higher quality JPEG
+
+            // Show preview (unchanged)
             let img = document.getElementById("captured-img");
             const container = PassportOCRApp.elements.container;
             if (!img && container) {

@@ -48,47 +48,52 @@ public class OcrService {
     }
 
     /**
-     * Parse MRZ from passport OCR text – more tolerant version
+     * Parse MRZ from passport OCR text – more tolerant to noise and missing prefixes.
      */
     public PassportData parseMrz(String ocrText) {
         PassportData data = new PassportData();
-        if (ocrText == null || ocrText.trim().isEmpty()) {
+        if (ocrText == null || ocrText.trim().isEmpty()) return data;
+
+        // Normalize aggressively
+        String normalized = ocrText.replaceAll("\\s+", "")
+                .replaceAll("[cCkKxX]", "<")    // Misread <
+                .replaceAll("[0O]", "0")        // O → 0
+                .replaceAll("[lI]", "1")        // l/I → 1
+                .replaceAll("[5S]", "5")        // S → 5 if needed
+                .toUpperCase();
+
+        // Find MRZ candidate substrings (long sequences of A-Z0-9<)
+        Pattern candidatePattern = Pattern.compile("[A-Z0-9<]{30,}");
+        Matcher candidateMatcher = candidatePattern.matcher(normalized);
+        String mrzCandidate = "";
+        while (candidateMatcher.find()) {
+            mrzCandidate += candidateMatcher.group();  // Concat potential MRZ parts
+        }
+
+        if (mrzCandidate.isEmpty()) {
+            System.out.println("No MRZ candidate found. Normalized: " + normalized);
             return data;
         }
 
-        // Normalize aggressively to handle OCR noise
-        String normalized = ocrText
-                .replaceAll("\\s+", "")                // Remove all whitespace
-                .replaceAll("[cCkKxX]", "<")           // Common misreads of <
-                .replaceAll("[0O]", "0")               // O → 0
-                .replaceAll("[lI]", "1")               // l/I → 1
-                .toUpperCase();
-
-        // Improved TD3/MRZ pattern – more flexible
+        // Flexible pattern starting from surname (handles missing P<USA)
         Pattern pattern = Pattern.compile(
-                "P<([A-Z<]{3})<([A-Z<]+)<<([A-Z<]+).+?" +   // P<country<<surname<<givennames...
-                        "(\\w{9})([A-Z]{3})" +                      // Passport number + nationality
-                        "(\\d{6})([MF<])" +                         // DOB + sex
-                        ".+?(\\d{6})"                               // Optional: expiry date
+                "([A-Z<]+)<<([A-Z<]+).{0,50}?(\\w{9})([A-Z]{3})(\\d{6})([MF<]).{0,50}?(\\d{6})"
         );
-
-        Matcher matcher = pattern.matcher(normalized);
+        Matcher matcher = pattern.matcher(mrzCandidate);
 
         if (matcher.find()) {
-            data.setLastName(matcher.group(3).replace("<", " ").trim());
+            data.setLastName(matcher.group(1).replace("<", " ").trim());
             data.setFirstName(matcher.group(2).replace("<", " ").trim());
-            data.setPassportNumber(matcher.group(4).trim());
-            data.setNationality(matcher.group(5).trim());
-            data.setDateOfBirth(formatDate(matcher.group(6)));
-            data.setGender("M".equals(matcher.group(7)) ? "Male" : "Female");
-
-            // If expiry is captured in group 8
-            if (matcher.groupCount() >= 8) {
-                data.setExpiryDate(formatDate(matcher.group(8)));
+            data.setPassportNumber(matcher.group(3).trim());
+            data.setNationality(matcher.group(4).trim());
+            data.setDateOfBirth(formatDate(matcher.group(5)));
+            data.setGender("M".equals(matcher.group(6)) ? "Male" : "Female");
+            if (matcher.groupCount() >= 7) {
+                data.setExpiryDate(formatDate(matcher.group(7)));
             }
+            System.out.println("Parsed MRZ data: " + data);  // Debug
         } else {
-            // Debug log if parsing fails
-            System.out.println("MRZ parsing failed. Raw normalized text: " + normalized);
+            System.out.println("MRZ parsing failed. Candidate: " + mrzCandidate);
         }
 
         return data;
