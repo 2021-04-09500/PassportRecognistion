@@ -104,7 +104,7 @@ public class OcrService {
     /**
      * MRZ parsing: more tolerant version
      */
-    private PassportData parseMrz(String ocrText) {
+    public PassportData parseMrz(String ocrText) {
         PassportData data = new PassportData();
 
         // Remove newlines, extra spaces
@@ -138,12 +138,12 @@ public class OcrService {
 
     // --- Helpers ---
 
-    private String formatDateYYMMDD(String yymmdd) {
+    public String formatDateYYMMDD(String yymmdd) {
         if (yymmdd == null || yymmdd.length() != 6) return "";
         return "20" + yymmdd.substring(0, 2) + "-" + yymmdd.substring(2, 4) + "-" + yymmdd.substring(4, 6);
     }
 
-    private String formatDate(String dateStr) {
+    public String formatDate(String dateStr) {
         // Converts "07 Aug 1999" -> "1999-08-07"
         try {
             String[] parts = dateStr.split(" ");
