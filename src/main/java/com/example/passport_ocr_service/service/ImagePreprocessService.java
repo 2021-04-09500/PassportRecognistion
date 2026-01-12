@@ -1,43 +1,42 @@
 package com.example.passport_ocr_service.service;
 
-import lombok.extern.log4j.Log4j2;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.core.Rect;
-import org.opencv.core.Size;
-import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.imgproc.CLAHE;
-import org.opencv.imgproc.Imgproc;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 
 @Service
 public class ImagePreprocessService {
 
-    static {
-        nu.pattern.OpenCV.loadLocally();
-    }
-
     public BufferedImage preprocess(File file) throws IOException {
-        Mat image = Imgcodecs.imread(file.getAbsolutePath());
+        BufferedImage image = ImageIO.read(file);
 
-        Imgproc.cvtColor(image, image, Imgproc.COLOR_BGR2GRAY);
-        Imgproc.GaussianBlur(image, image, new Size(3, 3), 0);
-        Imgproc.threshold(image, image, 0, 255,
-                Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU);
+        // Convert to grayscale
+        BufferedImage gray = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+        Graphics g = gray.getGraphics();
+        g.drawImage(image, 0, 0, null);
+        g.dispose();
 
-        return matToBufferedImage(image);
-    }
+        // Apply simple binarization (threshold)
+        BufferedImage binarized = new BufferedImage(gray.getWidth(), gray.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+        for (int y = 0; y < gray.getHeight(); y++) {
+            for (int x = 0; x < gray.getWidth(); x++) {
+                int rgb = gray.getRGB(x, y);
+                int r = (rgb >> 16) & 0xff;
+                int gVal = (rgb >> 8) & 0xff;
+                int b = rgb & 0xff;
+                int avg = (r + gVal + b) / 3;
+                if (avg > 128) {
+                    binarized.setRGB(x, y, 0xFFFFFF);
+                } else {
+                    binarized.setRGB(x, y, 0x000000);
+                }
+            }
+        }
 
-    private BufferedImage matToBufferedImage(Mat mat) throws IOException {
-        MatOfByte mob = new MatOfByte();
-        Imgcodecs.imencode(".png", mat, mob);
-        return ImageIO.read(new ByteArrayInputStream(mob.toArray()));
+        return binarized;
     }
 }
-

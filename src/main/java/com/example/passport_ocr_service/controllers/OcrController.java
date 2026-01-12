@@ -1,26 +1,42 @@
 package com.example.passport_ocr_service.controllers;
 
 import com.example.passport_ocr_service.model.PassportData;
-import com.example.passport_ocr_service.service.MrzParserService;
 import com.example.passport_ocr_service.service.OcrService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/ocr")
-@CrossOrigin
 public class OcrController {
 
     @Autowired
     private OcrService ocrService;
 
-    @Autowired
-    private MrzParserService mrzParser;
-
     @PostMapping("/passport")
-    public PassportData upload(@RequestParam("image") MultipartFile file) throws Exception {
-        String text = ocrService.extractText(file);
-        return mrzParser.parse(text);
+    public ResponseEntity<?> processPassport(@RequestParam("image") MultipartFile image) {
+        try {
+            String ocrText = ocrService.performOcr(image);
+            PassportData passportData = ocrService.parseMrz(ocrText);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("rawText", ocrText);
+            response.put("firstName", passportData.getFirstName());
+            response.put("lastName", passportData.getLastName());
+            response.put("passportNumber", passportData.getPassportNumber());
+            response.put("nationality", passportData.getNationality());
+            response.put("dateOfBirth", passportData.getDateOfBirth());
+            response.put("gender", passportData.getGender());
+            response.put("expiryDate", passportData.getExpiryDate());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
     }
 }

@@ -1,12 +1,8 @@
 package com.example.passport_ocr_service.model;
 
-
-import lombok.*;
-
+import lombok.Data;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class PassportData {
     private String firstName;
     private String lastName;
@@ -14,11 +10,5 @@ public class PassportData {
     private String nationality;
     private String dateOfBirth;
     private String gender;
-    private String expiryDate;   // Optional: from MRZ
-
-    // Optional helper to update fullName
-//    public void updateFullName() {
-//        this.fullName = (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
-//    }
+    private String expiryDate; // optional, can extract from MRZ if needed
 }
-
