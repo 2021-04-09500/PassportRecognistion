@@ -5,6 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thibitisha Taarifa – NMB</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Quick extra styles for clipboard section – add to your style.css later */
+        .clipboard-section {
+            background: #f0f8ff;
+            border: 2px solid #00aaff;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .clipboard-btn {
+            background: #00cc00;
+            color: white;
+            font-size: 1.3em;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            margin: 15px 0;
+            cursor: pointer;
+            width: 90%;
+            max-width: 400px;
+        }
+        .instructions {
+            font-size: 1.1em;
+            margin: 10px 0;
+            color: #333;
+        }
+        .visual-hint img {
+            max-width: 180px;
+            margin: 10px;
+        }
+    </style>
 </head>
 <body>
 
@@ -19,7 +51,7 @@
             <h2>Taarifa Zilizopatikana</h2>
         </div>
 
-        <!-- Passport Fields -->
+        <!-- Passport Fields (unchanged) -->
         <div class="field">
             <label>First Name</label>
             <input type="text" id="firstName">
@@ -71,6 +103,24 @@
         </div>
     </div>
 
+    <!-- ── NEW: Clipboard Copy Section ── -->
+    <div class="clipboard-section">
+        <h2 style="color: #0066cc; margin-bottom: 10px;">Nakili haraka!</h2>
+        <p class="instructions">Bonyeza kitufe hapa chini ili kunakili taarifa zako. Kisha nenda kwenye fomu mpya na gusa kwa muda mrefu (long press) kila sanduku ili kubandika (paste).</p>
+
+        <button class="clipboard-btn" id="copyAndGoBtn">
+            Nakili na Nenda kwenye Fomu
+        </button>
+
+        <!-- Visual hints – replace src with your own images later -->
+        <div class="visual-hint">
+            <p>Gusa kwa muda mrefu hapa... kisha chagua "Bandika" (Paste)</p>
+            <!-- Placeholder – add real icons/screenshots -->
+            <!-- Example: long press menu icon -->
+            <img src="https://i.sstatic.net/DdpV8.png" alt="Gusa kwa muda mrefu kuona menu" style="max-width:160px;">
+        </div>
+    </div>
+
     <div class="actions">
         <button class="btn btn-retake" onclick="location.href='camera.html'">
             Piga picha tena
@@ -86,10 +136,9 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", () => {
-        // --- 1. Get OCR or dummy fallback data ---
+        // --- 1. Get OCR or dummy fallback data --- (unchanged)
         let ocrData = JSON.parse(sessionStorage.getItem("ocrData") || "{}");
 
-        // If empty, inject dummy data for PoC
         if (!ocrData.firstName) {
             ocrData = {
                 firstName: "JOHN",
@@ -103,7 +152,7 @@
             sessionStorage.setItem("ocrData", JSON.stringify(ocrData));
         }
 
-        // --- 2. Prefill form fields ---
+        // --- 2. Prefill form fields --- (unchanged)
         document.getElementById('firstName').value = ocrData.firstName;
         document.getElementById('lastName').value = ocrData.lastName;
         document.getElementById('passportNumber').value = ocrData.passportNumber;
@@ -112,11 +161,48 @@
         document.getElementById('gender').value = ocrData.gender;
         document.getElementById('expiryDate').value = ocrData.expiryDate;
 
-        // Email & Phone
         document.getElementById('email').value = sessionStorage.getItem("email") || "";
         document.getElementById('phone').value = sessionStorage.getItem("phone") || "";
 
-        // --- 3. Continue button ---
+        // ── NEW: Copy to Clipboard + Open Form ──
+        document.getElementById('copyAndGoBtn').addEventListener('click', () => {
+            const confirmedData = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                passportNumber: document.getElementById('passportNumber').value,
+                nationality: document.getElementById('nationality').value,
+                dateOfBirth: document.getElementById('dateOfBirth').value,
+                gender: document.getElementById('gender').value,
+                expiryDate: document.getElementById('expiryDate').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value
+            };
+
+            // Simple readable format for low-literacy users
+            const textToCopy =
+                `Jina la Kwanza: ${confirmedData.firstName}
+Jina la Mwisho: ${confirmedData.lastName}
+Namba ya Pasipoti: ${confirmedData.passportNumber}
+Uraia: ${confirmedData.nationality}
+Tarehe ya Kuzaliwa: ${confirmedData.dateOfBirth}
+Jinsia: ${confirmedData.gender}
+Tarehe ya Mwisho: ${confirmedData.expiryDate}
+Barua Pepe: ${confirmedData.email}
+Simu: ${confirmedData.phone}`;
+
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    alert("Taarifa zimefanikiwa kunakiliwa! Fungua tab mpya na gusa kwa muda mrefu kila sanduku ili kubandika.");
+                    // Open your target form (Google Form in this case)
+                    window.open("https://docs.google.com/forms/d/e/1FAIpQLScJWSvFw76jO1EexVx4XZ49Pp8y5pDLVZ-5adMgz5d3ixuu9w/viewform?usp=header", "_blank");
+                })
+                .catch(err => {
+                    alert("Tatizo la kunakili. Jaribu tena au andika kwa mkono.");
+                    console.error('Clipboard error:', err);
+                });
+        });
+
+        // ── Old continue button (commented out for testing copy-paste) ──
         document.getElementById('continueBtn').addEventListener('click', () => {
             const confirmedData = {
                 firstName: document.getElementById('firstName').value,
@@ -133,12 +219,13 @@
             console.log("User confirmed data:", confirmedData);
             sessionStorage.setItem("confirmedData", JSON.stringify(confirmedData));
 
-            // --- Open NIC in a new tab (avoids browser security block) ---
-            window.open("https://docs.google.com/forms/d/e/1FAIpQLScJWSvFw76jO1EexVx4XZ49Pp8y5pDLVZ-5adMgz5d3ixuu9w/viewform?usp=header", "_blank");
+            // Comment out old direct open for now – testing copy-paste
+            // window.open("https://docs.google.com/forms/d/e/1FAIpQLScJWSvFw76jO1EexVx4XZ49Pp8y5pDLVZ-5adMgz5d3ixuu9w/viewform?usp=header", "_blank");
+
+            alert("Unaweza kutumia kitufe cha 'Nakili na Nenda kwenye Fomu' kwa urahisi zaidi!");
         });
     });
 </script>
-
 
 </body>
 </html>
