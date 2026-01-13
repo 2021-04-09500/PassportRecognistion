@@ -5,38 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thibitisha Taarifa – NMB</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* Quick extra styles for clipboard section – add to your style.css later */
-        .clipboard-section {
-            background: #f0f8ff;
-            border: 2px solid #00aaff;
-            border-radius: 10px;
-            padding: 15px;
-            margin: 20px 0;
-            text-align: center;
-        }
-        .clipboard-btn {
-            background: #00cc00;
-            color: white;
-            font-size: 1.3em;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 8px;
-            margin: 15px 0;
-            cursor: pointer;
-            width: 90%;
-            max-width: 400px;
-        }
-        .instructions {
-            font-size: 1.1em;
-            margin: 10px 0;
-            color: #333;
-        }
-        .visual-hint img {
-            max-width: 180px;
-            margin: 10px;
-        }
-    </style>
 </head>
 <body>
 
@@ -51,7 +19,7 @@
             <h2>Taarifa Zilizopatikana</h2>
         </div>
 
-        <!-- Passport Fields (unchanged) -->
+        <!-- Passport Fields -->
         <div class="field">
             <label>First Name</label>
             <input type="text" id="firstName">
@@ -103,31 +71,18 @@
         </div>
     </div>
 
-    <!-- ── NEW: Clipboard Copy Section ── -->
-    <div class="clipboard-section">
-        <h2 style="color: #0066cc; margin-bottom: 10px;">Nakili haraka!</h2>
-        <p class="instructions">Bonyeza kitufe hapa chini ili kunakili taarifa zako. Kisha nenda kwenye fomu mpya na gusa kwa muda mrefu (long press) kila sanduku ili kubandika (paste).</p>
-
-        <button class="clipboard-btn" id="copyAndGoBtn">
-            Nakili na Nenda kwenye Fomu
-        </button>
-
-        <!-- Visual hints – replace src with your own images later -->
-        <div class="visual-hint">
-            <p>Gusa kwa muda mrefu hapa... kisha chagua "Bandika" (Paste)</p>
-            <!-- Placeholder – add real icons/screenshots -->
-            <!-- Example: long press menu icon -->
-            <img src="https://i.sstatic.net/DdpV8.png" alt="Gusa kwa muda mrefu kuona menu" style="max-width:160px;">
-        </div>
-    </div>
-
     <div class="actions">
         <button class="btn btn-retake" onclick="location.href='camera.html'">
             Piga picha tena
         </button>
 
         <button class="btn btn-continue" id="continueBtn">
-            Endelea
+            Endelea (zamani)
+        </button>
+
+        <!-- New main button for pre-filled URL -->
+        <button class="btn btn-primary" id="prefillBtn" style="margin-top: 15px; background: #00cc00; font-size: 1.2em; padding: 15px;">
+            Endelea na Taarifa Zimejazwa
         </button>
     </div>
 
@@ -135,8 +90,22 @@
 </div>
 
 <script>
+    // ── PASTE YOUR REAL GOOGLE FORM ENTRY IDs HERE ──
+    // How to get them: Edit form → 3 dots → Get pre-filled link → fill dummy values (like "TEST1", "TEST2") → Get link → look at URL
+    const FIELD_IDS = {
+        firstName:     'entry.193643575',     // ← CHANGE THIS
+        lastName:      'entry.1073966424',     // ← CHANGE THIS
+        passportNumber:'entry.1672759103',     // ← CHANGE THIS
+        nationality:   'entry.1590946585',     // ← CHANGE THIS
+        dateOfBirth:   'entry.155910832',     // ← CHANGE THIS
+        gender:        'entry.1056652020',     // ← CHANGE THIS (use exact option text: "Male" or "Female")
+           // ← CHANGE THIS
+    };
+
+    const GOOGLE_FORM_BASE_URL = "https://docs.google.com/forms/d/e/1FAIpQLScJWSvFw76jO1EexVx4XZ49Pp8y5pDLVZ-5adMgz5d3ixuu9w/viewform";
+
     document.addEventListener("DOMContentLoaded", () => {
-        // --- 1. Get OCR or dummy fallback data --- (unchanged)
+        // 1. Get OCR or dummy fallback data (unchanged)
         let ocrData = JSON.parse(sessionStorage.getItem("ocrData") || "{}");
 
         if (!ocrData.firstName) {
@@ -152,7 +121,7 @@
             sessionStorage.setItem("ocrData", JSON.stringify(ocrData));
         }
 
-        // --- 2. Prefill form fields --- (unchanged)
+        // 2. Prefill form fields (unchanged)
         document.getElementById('firstName').value = ocrData.firstName;
         document.getElementById('lastName').value = ocrData.lastName;
         document.getElementById('passportNumber').value = ocrData.passportNumber;
@@ -164,47 +133,43 @@
         document.getElementById('email').value = sessionStorage.getItem("email") || "";
         document.getElementById('phone').value = sessionStorage.getItem("phone") || "";
 
-        // ── NEW: Copy to Clipboard + Open Form ──
-        document.getElementById('copyAndGoBtn').addEventListener('click', () => {
-            const confirmedData = {
-                firstName: document.getElementById('firstName').value,
-                lastName: document.getElementById('lastName').value,
-                passportNumber: document.getElementById('passportNumber').value,
-                nationality: document.getElementById('nationality').value,
+        // 3. New pre-fill button (main flow)
+        document.getElementById('prefillBtn').addEventListener('click', () => {
+            const data = {
+                firstName: document.getElementById('firstName').value.trim(),
+                lastName: document.getElementById('lastName').value.trim(),
+                passportNumber: document.getElementById('passportNumber').value.trim(),
+                nationality: document.getElementById('nationality').value.trim(),
                 dateOfBirth: document.getElementById('dateOfBirth').value,
                 gender: document.getElementById('gender').value,
                 expiryDate: document.getElementById('expiryDate').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim()
             };
 
-            // Simple readable format for low-literacy users
-            const textToCopy =
-                `Jina la Kwanza: ${confirmedData.firstName}
-Jina la Mwisho: ${confirmedData.lastName}
-Namba ya Pasipoti: ${confirmedData.passportNumber}
-Uraia: ${confirmedData.nationality}
-Tarehe ya Kuzaliwa: ${confirmedData.dateOfBirth}
-Jinsia: ${confirmedData.gender}
-Tarehe ya Mwisho: ${confirmedData.expiryDate}
-Barua Pepe: ${confirmedData.email}
-Simu: ${confirmedData.phone}`;
+            // Build URL parameters safely
+            const params = new URLSearchParams();
+            params.append('usp', 'pp_url'); // Required for pre-fill
 
-            navigator.clipboard.writeText(textToCopy)
-                .then(() => {
-                    alert("Taarifa zimefanikiwa kunakiliwa! Fungua tab mpya na gusa kwa muda mrefu kila sanduku ili kubandika.");
-                    // Open your target form (Google Form in this case)
-                    window.open("https://docs.google.com/forms/d/e/1FAIpQLScJWSvFw76jO1EexVx4XZ49Pp8y5pDLVZ-5adMgz5d3ixuu9w/viewform?usp=header", "_blank");
-                })
-                .catch(err => {
-                    alert("Tatizo la kunakili. Jaribu tena au andika kwa mkono.");
-                    console.error('Clipboard error:', err);
-                });
+            if (FIELD_IDS.firstName)     params.append(FIELD_IDS.firstName,     data.firstName);
+            if (FIELD_IDS.lastName)      params.append(FIELD_IDS.lastName,      data.lastName);
+            if (FIELD_IDS.passportNumber)params.append(FIELD_IDS.passportNumber,data.passportNumber);
+            if (FIELD_IDS.nationality)   params.append(FIELD_IDS.nationality,   data.nationality);
+            if (FIELD_IDS.dateOfBirth)   params.append(FIELD_IDS.dateOfBirth,   data.dateOfBirth);
+            if (FIELD_IDS.gender)        params.append(FIELD_IDS.gender,        data.gender);
+            if (FIELD_IDS.expiryDate)    params.append(FIELD_IDS.expiryDate,    data.expiryDate);
+            if (FIELD_IDS.email)         params.append(FIELD_IDS.email,         data.email);
+            if (FIELD_IDS.phone)         params.append(FIELD_IDS.phone,         data.phone);
+
+            const prefillUrl = `${GOOGLE_FORM_BASE_URL}?${params.toString()}`;
+
+            alert("Fomu inafunguliwa na taarifa zako tayari zimejazwa! Thibitisha na tuma tu.");
+            window.open(prefillUrl, '_blank');
         });
 
-        // ── Old continue button (commented out for testing copy-paste) ──
+        // 4. Old continue button (kept for fallback/debugging)
         document.getElementById('continueBtn').addEventListener('click', () => {
-            const confirmedData = {
+            const data = {
                 firstName: document.getElementById('firstName').value,
                 lastName: document.getElementById('lastName').value,
                 passportNumber: document.getElementById('passportNumber').value,
@@ -216,13 +181,10 @@ Simu: ${confirmedData.phone}`;
                 phone: document.getElementById('phone').value
             };
 
-            console.log("User confirmed data:", confirmedData);
-            sessionStorage.setItem("confirmedData", JSON.stringify(confirmedData));
+            console.log("User confirmed data:", data);
+            sessionStorage.setItem("confirmedData", JSON.stringify(data));
 
-            // Comment out old direct open for now – testing copy-paste
-            // window.open("https://docs.google.com/forms/d/e/1FAIpQLScJWSvFw76jO1EexVx4XZ49Pp8y5pDLVZ-5adMgz5d3ixuu9w/viewform?usp=header", "_blank");
-
-            alert("Unaweza kutumia kitufe cha 'Nakili na Nenda kwenye Fomu' kwa urahisi zaidi!");
+            alert("Tumia kitufe cha 'Endelea na Taarifa Zimejazwa' kwa urahisi zaidi!");
         });
     });
 </script>
